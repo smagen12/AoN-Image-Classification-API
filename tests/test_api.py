@@ -11,10 +11,12 @@ def test_health():
 def test_model_info():
     response = client.get("/model-info")
     assert response.status_code == 200
-    assert "available_weights" in response.json()
+    assert "model_type" in response.json()
+    assert "framework" in response.json()
+    assert "input_shape" in response.json()
 
 def test_predict():
-    with open("tests/test_image.jpg", "rb") as img:
+    with open("tests/test_image.png", "rb") as img:
         response = client.post(
             "/predict",
             files={"file": img},
