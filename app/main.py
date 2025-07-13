@@ -1,90 +1,67 @@
-from fastapi import FastAPI, UploadFile, File, HTTPException, Query
+# app/main.py
+
+from fastapi import FastAPI, UploadFile, File, HTTPException
 from fastapi.responses import JSONResponse
-from loguru import logger
 from pydantic import BaseModel
-
-import torch
-from torchvision import transforms
+from loguru import logger
 from PIL import Image
+import numpy as np
 import io
-import os
 
-from model import load_model
+from app.model import load_keras_model
 
-# Loguru setup
-logger.add("logs.log")
+# Load TensorFlow model
+model = load_keras_model()
+
+# Labels
+labels = ["Anime", "Cartoon"]
+
+# Logging setup
+logger.add("app/logs.log")
 
 # FastAPI app
-app = FastAPI(
-    title="Anime vs Cartoon Classifier",
-    description="Predict whether an image is anime or cartoon with ResNet50",
-    version="1.0.0"
-)
-
-# Available weights directory
-WEIGHTS_DIR = "app/weights"
-
-# Load default model
-DEFAULT_WEIGHTS = f"{WEIGHTS_DIR}/resnet_v1.pth"
-model = load_model(DEFAULT_WEIGHTS)
-
-# Image transform
-transform = transforms.Compose([
-    transforms.Resize((224, 224)),
-    transforms.ToTensor(),
-])
-
-labels = ["anime", "cartoon"]
+app = FastAPI(title="Anime vs Cartoon Classifier (TensorFlow/Keras)")
 
 class PredictionResponse(BaseModel):
     label: str
     confidence: float
 
-@app.post("/predict", response_model=PredictionResponse, summary="Predict anime or cartoon")
-async def predict(
-    file: UploadFile = File(...),
-    weights: str = Query(default="resnet_v1.pth", description="Weights file to use")
-):
-    logger.info(f"Received file: {file.filename} | Using weights: {weights}")
+def preprocess_image(image: Image.Image):
+    image = image.resize((128, 128))
+    image = np.array(image).astype("float32") / 255.0
+    image = np.expand_dims(image, axis=0)
+    return image
 
-    # Load specified weights if different
-    weights_path = os.path.join(WEIGHTS_DIR, weights)
-    if not os.path.exists(weights_path):
-        raise HTTPException(status_code=400, detail=f"Weights file {weights} not found.")
-
-    global model
-    model = load_model(weights_path)
-
+@app.post("/predict", response_model=PredictionResponse)
+async def predict(file: UploadFile = File(...)):
     try:
         contents = await file.read()
         image = Image.open(io.BytesIO(contents)).convert("RGB")
-        input_tensor = transform(image).unsqueeze(0)
+        input_tensor = preprocess_image(image)
 
-        with torch.no_grad():
-            outputs = model(input_tensor)
-            _, predicted = torch.max(outputs, 1)
-            confidence = torch.softmax(outputs, dim=1)[0][predicted].item()
+        predictions = model.predict(input_tensor)
+        predicted_index = np.argmax(predictions)
+        confidence = float(predictions[0][predicted_index])
+        label = labels[predicted_index]
 
-        label = labels[predicted.item()]
-        logger.info(f"Prediction: {label}, Confidence: {confidence:.4f}")
+        logger.info(f"Predicted: {label}, Confidence: {confidence:.4f}")
 
-        return JSONResponse(content={
-            "label": label,
-            "confidence": round(confidence, 4)
-        })
+        return {"label": label, "confidence": round(confidence, 4)}
 
     except Exception as e:
-        logger.error(f"Prediction failed: {e}")
-        raise HTTPException(status_code=500, detail="Prediction failed.")
+        logger.error(f"Prediction error: {e}")
+        raise HTTPException(status_code=500, detail="Prediction failed")
 
-@app.get("/health", summary="Check if API is running")
+@app.get("/health")
 def health():
     return {"status": "ok"}
 
-@app.get("/model-info", summary="Get current model info")
+@app.get("/model-info")
 def model_info():
     return {
-        "model_name": "ResNet50",
-        "available_weights": os.listdir(WEIGHTS_DIR),
-        "default_weights": DEFAULT_WEIGHTS
+        "model_type": "CNN",
+        "framework": "TensorFlow/Keras",
+        "input_shape": "128x128x3",
+        "labels": labels,
+        "version": "v1"
     }
