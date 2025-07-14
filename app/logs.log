@@ -1,8 +1,0 @@
-2025-07-13 17:43:28.994 | INFO     | app.main:predict:47 - Predicted: Cartoon, Confidence: 0.9561
-2025-07-13 17:44:33.431 | INFO     | app.main:predict:47 - Predicted: Cartoon, Confidence: 0.9634
-2025-07-13 17:45:03.074 | INFO     | app.main:predict:47 - Predicted: Cartoon, Confidence: 0.9630
-2025-07-13 17:45:23.115 | INFO     | app.main:predict:47 - Predicted: Cartoon, Confidence: 0.9110
-2025-07-13 17:46:15.166 | INFO     | app.main:predict:47 - Predicted: Anime, Confidence: 0.9029
-2025-07-13 18:20:43.538 | INFO     | app.main:predict:47 - Predicted: Anime, Confidence: 0.9652
-2025-07-13 18:20:57.136 | INFO     | app.main:predict:47 - Predicted: Anime, Confidence: 0.9652
-2025-07-13 18:22:25.124 | INFO     | app.main:predict:47 - Predicted: Anime, Confidence: 0.9652

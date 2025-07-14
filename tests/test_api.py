@@ -11,17 +11,19 @@ def test_health():
 def test_model_info():
     response = client.get("/model-info")
     assert response.status_code == 200
-    assert "model_type" in response.json()
-    assert "framework" in response.json()
-    assert "input_shape" in response.json()
+    data = response.json()
+    assert "model_type" in data
+    assert "framework" in data
+    assert "input_shape" in data
+    assert "labels" in data
 
 def test_predict():
     with open("tests/test_image.png", "rb") as img:
         response = client.post(
             "/predict",
-            files={"file": img},
-            params={"weights": "resnet_v1.pth"}
+            files={"file": ("test_image.png", img, "image/png")}
         )
     assert response.status_code == 200
-    assert "label" in response.json()
-    assert "confidence" in response.json()
+    data = response.json()
+    assert "label" in data
+    assert "confidence" in data
