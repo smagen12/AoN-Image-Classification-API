@@ -19,10 +19,7 @@ def test_model_info():
 
 def test_predict():
     with open("tests/test_image.png", "rb") as img:
-        response = client.post(
-            "/predict",
-            files={"file": ("test_image.png", img, "image/png")}
-        )
+        response = client.post("/predict", files={"file": img})
     assert response.status_code == 200
     data = response.json()
     assert "label" in data
