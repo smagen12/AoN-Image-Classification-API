@@ -16,6 +16,7 @@ def test_model_info():
     assert "framework" in data
     assert "input_shape" in data
     assert "labels" in data
+    
 
 def test_predict():
     with open("tests/test_image.png", "rb") as img:
